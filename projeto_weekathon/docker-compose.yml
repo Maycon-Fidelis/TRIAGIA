@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: radia
+      POSTGRES_USER: radia
+      POSTGRES_PASSWORD: radia123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/migrations/001_initial.sql:/docker-entrypoint-initdb.d/001_initial.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U radia"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://radia:radia123@postgres:5432/radia
+      REDIS_URL: redis://redis:6379/0
+      STORAGE_PATH: /app/storage
+    volumes:
+      - ./backend:/app
+      - storage_data:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  worker:
+    build: ./backend
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://radia:radia123@postgres:5432/radia
+      REDIS_URL: redis://redis:6379/0
+      STORAGE_PATH: /app/storage
+    volumes:
+      - ./backend:/app
+      - storage_data:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=2 -Q ai_analysis
+
+  flower:
+    build: ./backend
+    ports:
+      - "5555:5555"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      - redis
+    command: celery -A app.tasks.celery_app flower --port=5555
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:
+  storage_data:
