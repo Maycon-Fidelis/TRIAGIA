@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { examsApi, reportsApi } from "@/lib/api";
+import { MOCK_EXAMS } from "@/lib/mock-data";
 import { EXAM_TYPE_LABELS, STATUS_CONFIG, URGENCY_CONFIG, type UrgencyLevel } from "@/lib/types";
 import UrgencyBadge from "@/components/dashboard/UrgencyBadge";
 import ExamViewer from "@/components/exam/ExamViewer";
@@ -30,8 +30,7 @@ export default function ExamDetailPage() {
 
   const { data: exam, isLoading } = useQuery({
     queryKey: ["exam", id],
-    queryFn: () => examsApi.get(id),
-    refetchInterval: polling ? 4000 : false,
+    queryFn: async () => MOCK_EXAMS.find((e) => e.id === id) ?? null,
   });
 
   useEffect(() => {
@@ -48,7 +47,26 @@ export default function ExamDetailPage() {
   const [confirmaIA, setConfirmaIA] = useState<boolean | null>(null);
 
   const mutation = useMutation({
-    mutationFn: reportsApi.create,
+    mutationFn: async (data: Parameters<typeof import("@/lib/api").reportsApi.create>[0]) => {
+      // mock: injeta o laudo no exame em memória
+      const target = MOCK_EXAMS.find((e) => e.id === data.exam_id);
+      if (target) {
+        const report = {
+          id: `r-${Date.now()}`,
+          exam_id: data.exam_id!,
+          radiologist_name: data.radiologist_name!,
+          crm: data.crm,
+          laudo: data.laudo!,
+          urgencia_final: data.urgencia_final!,
+          confirma_ia: data.confirma_ia,
+          data_laudo: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+        };
+        target.reports = [report];
+        target.status = "LAUDADO";
+      }
+      return target?.reports[0]!;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["exam", id] });
       qc.invalidateQueries({ queryKey: ["exam-queue"] });

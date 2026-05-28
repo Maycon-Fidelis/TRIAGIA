@@ -41,6 +41,8 @@ export interface Exam {
   tipo_exame: string;
   modalidade?: string;
   arquivo_url?: string;
+  arquivo_nome?: string;
+  arquivo_original_url?: string;
   status: ExamStatus;
   urgencia: UrgencyLevel;
   data_realizacao: string;

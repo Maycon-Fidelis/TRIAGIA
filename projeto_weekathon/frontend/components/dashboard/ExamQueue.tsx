@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { examsApi } from "@/lib/api";
+import { MOCK_QUEUE } from "@/lib/mock-data";
 import {
   URGENCY_CONFIG,
   STATUS_CONFIG,
@@ -110,8 +110,7 @@ function QueueRow({ item, index }: { item: ExamQueueItem; index: number }) {
 export default function ExamQueue() {
   const { data, isLoading, refetch, isFetching } = useQuery({
     queryKey: ["exam-queue"],
-    queryFn: () => examsApi.getQueue(),
-    refetchInterval: 10_000,
+    queryFn: async () => MOCK_QUEUE,
   });
 
   const criticos = data?.filter((e) => e.urgencia === "CRITICO") ?? [];

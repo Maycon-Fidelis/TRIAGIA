@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { examsApi } from "@/lib/api";
-import { EXAM_TYPE_LABELS, STATUS_CONFIG } from "@/lib/types";
+import { MOCK_EXAMS } from "@/lib/mock-data";
+import { EXAM_TYPE_LABELS, STATUS_CONFIG, type UrgencyLevel, type ExamStatus } from "@/lib/types";
 import UrgencyBadge from "@/components/dashboard/UrgencyBadge";
 import { formatDate, cn } from "@/lib/utils";
 import { ChevronRight, Filter } from "lucide-react";
@@ -16,8 +16,12 @@ export default function ExamsPage() {
 
   const { data: exams, isLoading } = useQuery({
     queryKey: ["exams", urgenciaFilter, statusFilter],
-    queryFn: () => examsApi.list({ urgencia: urgenciaFilter || undefined, status_filter: statusFilter || undefined }),
-    refetchInterval: 15_000,
+    queryFn: async () =>
+      MOCK_EXAMS.filter((e) => {
+        if (urgenciaFilter && e.urgencia !== urgenciaFilter) return false;
+        if (statusFilter && e.status !== statusFilter) return false;
+        return true;
+      }),
   });
 
   return (

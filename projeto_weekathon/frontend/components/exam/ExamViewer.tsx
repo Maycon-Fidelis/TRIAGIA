@@ -1,9 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { ZoomIn, ZoomOut, RotateCw, Maximize2 } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface Props {
   imageUrl?: string;
@@ -15,17 +13,15 @@ export default function ExamViewer({ imageUrl, patientName, examType }: Props) {
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   const handleZoomIn = () => setZoom((z) => Math.min(z + 0.25, 3));
   const handleZoomOut = () => setZoom((z) => Math.max(z - 0.25, 0.5));
   const handleRotate = () => setRotation((r) => (r + 90) % 360);
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
-  const fullImageUrl = imageUrl
-    ? imageUrl.startsWith("http")
-      ? imageUrl
-      : `${apiBase}${imageUrl}`
-    : null;
+  const fullImageUrl = imageUrl ?? null;
+
+  const showImage = fullImageUrl && !imgError;
 
   return (
     <>
@@ -73,7 +69,7 @@ export default function ExamViewer({ imageUrl, patientName, examType }: Props) {
 
         {/* Visor */}
         <div className="relative overflow-hidden bg-black" style={{ height: "480px" }}>
-          {fullImageUrl ? (
+          {showImage ? (
             <div
               className="absolute inset-0 flex items-center justify-center transition-transform duration-150"
               style={{ transform: `scale(${zoom}) rotate(${rotation}deg)` }}
@@ -83,7 +79,8 @@ export default function ExamViewer({ imageUrl, patientName, examType }: Props) {
                 src={fullImageUrl}
                 alt={`Exame ${examType ?? ""} — ${patientName ?? ""}`}
                 className="max-w-full max-h-full object-contain"
-                style={{ filter: "brightness(1.05) contrast(1.1)" }}
+                style={{ filter: "brightness(1.05) contrast(1.15) grayscale(1)" }}
+                onError={() => setImgError(true)}
               />
             </div>
           ) : (
@@ -99,14 +96,14 @@ export default function ExamViewer({ imageUrl, patientName, examType }: Props) {
       </div>
 
       {/* Modal tela cheia */}
-      {isFullscreen && fullImageUrl && (
+      {isFullscreen && showImage && (
         <div
           className="fixed inset-0 z-50 bg-black flex items-center justify-center"
           onClick={() => setIsFullscreen(false)}
         >
           <button
             className="absolute top-4 right-4 text-white bg-gray-800 rounded-lg p-2 hover:bg-gray-700"
-            onClick={() => setIsFullscreen(false)}
+            onClick={(e) => { e.stopPropagation(); setIsFullscreen(false); }}
           >
             Fechar ✕
           </button>
@@ -115,7 +112,8 @@ export default function ExamViewer({ imageUrl, patientName, examType }: Props) {
             src={fullImageUrl}
             alt="Exame em tela cheia"
             className="max-w-full max-h-full object-contain"
-            style={{ transform: `rotate(${rotation}deg)` }}
+            style={{ transform: `rotate(${rotation}deg)`, filter: "brightness(1.05) contrast(1.15) grayscale(1)" }}
+            crossOrigin="anonymous"
           />
         </div>
       )}

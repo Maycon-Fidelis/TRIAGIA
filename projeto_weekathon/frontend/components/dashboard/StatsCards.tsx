@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { statsApi } from "@/lib/api";
+import { MOCK_STATS } from "@/lib/mock-data";
 import { AlertTriangle, Clock, CheckCircle2, Activity } from "lucide-react";
 
 function Card({
@@ -40,8 +40,7 @@ function Card({
 export default function StatsCards() {
   const { data, isLoading } = useQuery({
     queryKey: ["stats"],
-    queryFn: statsApi.dashboard,
-    refetchInterval: 15_000,
+    queryFn: async () => MOCK_STATS,
   });
 
   return (
