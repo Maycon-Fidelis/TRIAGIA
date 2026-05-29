@@ -1,13 +1,35 @@
+# Dependências
 node_modules/
+
+# Next.js
 .next/
+out/
+
+# Build
 dist/
 build/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Variáveis de ambiente
 .env
 .env.local
-node_modules/
-.env
-node_modules/
-.env
-node_modules/
-.env
-node_modules/
+.env*.local
+
+# Arquivos grandes / mídia local
+*.node
+foto.png
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editores
+.DS_Store
+.vscode/
+*.swp
